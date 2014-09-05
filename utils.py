@@ -100,11 +100,11 @@ def getCam():
 def ndprint(a, format_string ='{0:.2f}'):
     print [format_string.format(v,i) for i,v in enumerate(a)]
 
-def saveParameters(intrinsic, distorsion, rotation, translation, rms, path):
+def saveParameters(intrinsic, distorsion, rotation, translation, rms, path, n_picts):
     FILE = open(path, "w")
 
     # Write parameters :
-    FILE.write("Calibration error (pixels) : \n")
+    FILE.write("Calibration error (pixels) over {} pictures: \n".format(n_picts))
     FILE.write("{}\n\n".format(rms))
 
     FILE.write("Intrisic Matrix : \n")

@@ -27,23 +27,21 @@ import camera_calibration as cam_calib
 import utils
 import os
 
+
 class batchCalibration:
     def __init__(self):
-        self.root_path      = ''
-        self.folder_list    = []
-        self.pattern_size   = (0,0) # Number of inner squares on each dimension
-        self.sq_size_h      = 0.0
-        self.sq_size_v      = 0.0
+        self.root_path = ''
+        self.folder_list = []
+        self.pattern_size = (0,0) # Number of inner squares on each dimension
+        self.sq_size_h = 0.0
+        self.sq_size_v = 0.0
     
     def calibrate(self, usedefaults = True):
         
         if not usedefaults:
             # Get the pattern parameters
-            h_dim = utils.getAnswer(
-            "Number of inner corners on the horizontal dimension ? ", '12345678910')
-    
-            v_dim = utils.getAnswer(
-            "Number of inner corners on the vertical dimension ? ", '12345678910')
+            h_dim = utils.getAnswer("Number of inner corners on the horizontal dimension ? ", '12345678910')
+            v_dim = utils.getAnswer("Number of inner corners on the vertical dimension ? ", '12345678910')
     
             # Enter the number of squares over each dimensions
             self.pattern_size = (int(h_dim), int(v_dim))
@@ -51,7 +49,7 @@ class batchCalibration:
                 .format(self.pattern_size[0], self.pattern_size[1])
         
             get_square_size = False
-            while not(get_square_size):
+            while not get_square_size:
                 sq_size = raw_input("Horizontal Size (m) of the squares ? ")
     
                 try:
@@ -62,7 +60,7 @@ class batchCalibration:
                     print "Cannot determine dimension"
     
             get_square_size = False
-            while not(get_square_size):
+            while not get_square_size:
                 sq_size = raw_input("Vertical Size (m) of the squares ? ")
     
                 try:
@@ -72,7 +70,7 @@ class batchCalibration:
                 except ValueError:
                     print "Cannot determine dimension"    
                     
-        else :
+        else:
             h_dim = 9
             v_dim = 6
             self.pattern_size = (int(h_dim), int(v_dim))                
@@ -91,19 +89,19 @@ class batchCalibration:
        
         for dirpath, dirnames, filenames in os.walk(path):
 
-            for dir in dirnames :
-                if not dir[0] == '.':
-                    path = dirpath + dir
+            for directory in dirnames:
+                if not directory[0] == '.':
+                    path = dirpath + directory
                     
                     settings = (False, True, True, True, path, self.pattern_size , 
                                 (self.sq_size_h,self.sq_size_v), False)                
                     
                     new_cam = cam_calib.cameraCalibration(settings)
                     
-                    print "\nCalibrating using files in folder : {}".format(dir)                
+                    print "\nCalibrating using files in folder : {}".format(directory)
                     
-                    if (os.path.exists(path +'/calib_results.txt')):
-                        print "Folder {} already contains calibration results".format(dir)
+                    if os.path.exists(path +'/calib_results.txt'):
+                        print "Folder {} already contains calibration results".format(directory)
                     else :
                         new_cam.calibrate()
                         
