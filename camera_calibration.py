@@ -317,7 +317,7 @@ class cameraCalibration:
             cv2.namedWindow("patternDetection", cv2.CV_WINDOW_AUTOSIZE)
             print "Recording patterns from files, press r to reject"
         else :
-            print "Finding the patterns.."
+            print "Looking for patterns.."
 
         for new_frame in self.pictures:
             n_count = n_count + 1

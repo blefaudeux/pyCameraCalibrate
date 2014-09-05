@@ -76,8 +76,8 @@ class batchCalibration:
             h_dim = 9
             v_dim = 6
             self.pattern_size = (int(h_dim), int(v_dim))                
-            self.sq_size_h = 0.0295
-            self.sq_size_v = 0.0295
+            self.sq_size_h = 0.02545
+            self.sq_size_v = 0.02545
             
             print "Used parameters :"
             print "Pattern size : {}".format(self.pattern_size)
