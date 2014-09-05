@@ -37,38 +37,40 @@ except ImportError:
 
 def getAnswer(question, possibilities):
     answer = 'null'
-    while (possibilities.find(answer) == -1):
+    while possibilities.find(answer) == -1:
         answer = raw_input(question)
+
     return answer
 
-# Handle paths and filenames.. return a correct pathway (hopefully)
-def handlePath(path, filename):
+
+def handlePath(path, filename): # Handle paths and filenames.. return a correct pathway (hopefully)
     if len(path) == 0:
         return filename
 
     else:
-        if (path[-1] != '/') :
+        if path[-1] != '/':
             # Test if its a directory
-            if (os.path.isdir(path)):
+            if os.path.isdir(path):
                 new_path = path + "/" + filename
                 return new_path
 
             # Test if its a filename
-            else :
-                if (os.path.isfile(path)):
+            else:
+                if os.path.isfile(path):
                     return path
 
         # It's just the beginning of a path, complete
-        else :
+        else:
             new_path = path + filename
             return new_path
+
 
 def getCam():
     # Test the cams connected to the system :
     choice_done = False
     n_cam = 0
 
-    while (not(choice_done)):
+    while not choice_done:
         # start cam and show it :
         print "Capturing camera {} \n".format(n_cam)
         cam = cv2.VideoCapture(n_cam)
@@ -88,39 +90,18 @@ def getCam():
 
         answer = getAnswer("Is this the good camera ? (y/n)", 'yn')
 
-        if (answer == 'y'):
+        if answer == 'y':
             choice_done = True
 
         else:
-            n_cam = n_cam + 1
+            n_cam += 1
 
     return cam
 
-# http://stackoverflow.com/questions/2891790/pretty-printing-of-numpy-array
-def ndprint(a, format_string ='{0:.2f}'):
+
+def ndprint(a, format_string ='{0:.2f}'):   # http://stackoverflow.com/questions/2891790/pretty-printing-of-numpy-array
     print [format_string.format(v,i) for i,v in enumerate(a)]
 
-def saveParameters(intrinsic, distorsion, rotation, translation, rms, path, n_picts):
-    FILE = open(path, "w")
-
-    # Write parameters :
-    FILE.write("Calibration error (pixels) over {} pictures: \n".format(n_picts))
-    FILE.write("{}\n\n".format(rms))
-
-    FILE.write("Intrisic Matrix : \n")
-    FILE.write("{}\n\n".format(intrinsic))
-
-    FILE.write("Distorsion coefficients :\n")
-    FILE.write("{}\n\n".format(distorsion))
-
-    FILE.write("Rotations :\n")
-    FILE.write("{}\n\n".format(rotation))
-
-    FILE.write("Translations :\n")
-    FILE.write("{}\n\n".format(translation))
-
-    # Close file
-    FILE.close()
 
 def saveParametersXML(intrinsic_0,
                       distorsion_0,

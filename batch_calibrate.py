@@ -93,16 +93,16 @@ class batchCalibration:
                 if not directory[0] == '.':
                     path = dirpath + directory
                     
-                    settings = (False, True, True, True, path, self.pattern_size , 
-                                (self.sq_size_h,self.sq_size_v), False)                
+                    settings = (False, True, True, True, path, self.pattern_size,
+                                (self.sq_size_h, self.sq_size_v), False)
                     
                     new_cam = cam_calib.cameraCalibration(settings)
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
                     
-                    if os.path.exists(path +'/calib_results.txt'):
+                    if os.path.exists(path +"/calib_results.txt"):
                         print "Folder {} already contains calibration results".format(directory)
-                    else :
+                    else:
                         new_cam.calibrate()
                         
         raw_input("\nCalibration done, press any key to exit")

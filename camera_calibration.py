@@ -549,10 +549,10 @@ class cameraCalibration:
 
                     else:
                         file_left = utils.handlePath(filepath, "_left.txt")
-                        utils.saveParameters(int_left, dist_left, R, T, file_left, self.n_pattern_found)
+                        self.saveParameters(int_left, dist_left, R, T, file_left, self.n_pattern_found)
 
                         file_right = utils.handlePath(filepath, "_right.txt")
-                        utils.saveParameters(int_right, dist_right, R, T, file_right, self.n_pattern_found)
+                        self.saveParameters(int_right, dist_right, R, T, file_right, self.n_pattern_found)
 
                         print "Parameters file written"
                         b_write_success = True
@@ -615,12 +615,12 @@ class cameraCalibration:
     
                     # Create a file object in "write" mode
                     try:
-                        utils.saveParameters(self.intrinsics, self.distorsion,
-                            rvecs, tvecs, rms, filepath, self.n_pattern_found)
+                        self.saveParameters(self.intrinsics, self.distorsion,
+                                            rvecs, tvecs, rms, filepath, self.n_pattern_found)
 
                         b_write_success = True
     
-                    except:
+                    except ValueError:
                         print "Wrong path, please correct"
     
                     time.sleep(2)
@@ -628,9 +628,35 @@ class cameraCalibration:
         else:
             calib_file_path = utils.handlePath(self.file_path, "calib_results.txt")
             
-            utils.saveParameters(self.intrinsics, self.distorsion,
-                rvecs, tvecs, rms, calib_file_path, self.n_pattern_found)
+            self.saveParameters(self.intrinsics, self.distorsion, rvecs, tvecs, rms,
+                                calib_file_path, self.n_pattern_found)
             
             print "Saved calibration file"            
             
         return
+
+    def saveParameters(self, intrinsic, distorsion, rotation, translation, rms, path, n_picts):
+        FILE = open(path, "w")
+
+        # Write parameters :
+        FILE.write("Calibration error (pixels) over {} pictures: \n".format(n_picts))
+        FILE.write("{}\n\n".format(rms))
+
+        FILE.write("Intrisic Matrix : \n")
+        FILE.write("{}\n\n".format(intrinsic))
+
+        FILE.write("Distorsion coefficients :\n")
+        FILE.write("{}\n\n".format(distorsion))
+
+        FILE.write("Rotations :\n")
+        FILE.write("{}\n\n".format(rotation))
+
+        FILE.write("Translations :\n")
+        FILE.write("{}\n\n".format(translation))
+
+        FILE.write("Pattern used : \n")
+        FILE.write("{} squares\n".format(self.pattern_size))
+        FILE.write("{}m x {}m \n".format(self.sq_size_h, self.sq_size_v))
+
+        # Close file
+        FILE.close()
