@@ -7,6 +7,10 @@ pyCameraCalibrate
 
 Nothing fancy, just a useful tool in some circumstances..
 
-Usecase : 
-"python batch_calibrate.py" (pattern defined by default, modify the script as needed)
-"python single_calibrate.py" for a one-time calibration
+# Usecase : 
+* *python batch_calibrate.py* (pattern defined by default, modify the script as needed)
+* *python single_calibrate.py* for a one-time calibration
+
+# Installation requisites :
+* Python
+* OpenCV with python bindings
