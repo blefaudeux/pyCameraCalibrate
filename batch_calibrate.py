@@ -36,7 +36,7 @@ class batchCalibration:
         self.sq_size_h = 0.0
         self.sq_size_v = 0.0
     
-    def calibrate(self, usedefaults = True):
+    def calibrate(self, usedefaults=True):
         
         if not usedefaults:
             # Get the pattern parameters
@@ -110,4 +110,4 @@ class batchCalibration:
 
 # Run this script
 new_run = batchCalibration()
-new_run.calibrate( )
+new_run.calibrate()

@@ -165,7 +165,7 @@ class cameraCalibration:
 
     def chooseCalibrationSettings(self):
         # Get the path where all the files are stored
-        if len(self.file_path) ==0:
+        if len(self.file_path) == 0:
             file_read = False
     
             while not file_read:
@@ -175,7 +175,7 @@ class cameraCalibration:
             self.file_path = path
             
         else:
-            file_read = self.readFiles(self.file_path)
+            self.readFiles(self.file_path)
 
         # Get the pattern dimensions in terms of patch number:
         if self.pattern_size == (0, 0):
@@ -536,7 +536,7 @@ class cameraCalibration:
 
                 try:
                     if save_XML:
-                        file = utils.handlePath(filepath, "camera_calibration.xml")
+                        calib_file = utils.handlePath(filepath, "camera_calibration.xml")
 
                         utils.saveParametersXML(int_left,
                                                 dist_left,
@@ -545,7 +545,7 @@ class cameraCalibration:
                                                 R,
                                                 T,
                                                 self.frame_size,
-                                                file)
+                                                calib_file)
 
                     else:
                         file_left = utils.handlePath(filepath, "_left.txt")
@@ -572,8 +572,8 @@ class cameraCalibration:
         self.recordPatterns()
 
         # Compute intrinsic parameters
-        rvecs = [np.zeros(3) for i in xrange(self.max_frames_i)]    # Rotation and translation matrix
-        tvecs = [np.zeros(3) for i in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]    # Rotation and translation matrix
+        tvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]
 
         _obj_points = np.array(self.obj_points, dtype=np.float32)
         _img_points = np.array(self.img_points, dtype=np.float32)
