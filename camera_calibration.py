@@ -544,8 +544,14 @@ class cameraCalibration:
 
         _obj_points = np.array(self.obj_points, dtype=np.float32)
         _img_points = np.array(self.img_points, dtype=np.float32)
+        self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
+        self.distorsion.append(np.zeros(8, dtype=np.float32))
 
-        rms, self.intrinsics[0], self.distorsion[0], _rvecs, _tvecs = cv2.calibrateCamera(_obj_points, _img_points, self.frame_size, self.intrinsics, self.distorsion, rvecs, tvecs)
+        rms, self.intrinsics[0], self.distorsion[0], _rvecs, _tvecs = cv2.calibrateCamera(_obj_points, _img_points,
+                                                                                          self.frame_size,
+                                                                                          self.intrinsics[0],
+                                                                                          self.distorsion[0],
+                                                                                          rvecs, tvecs)
 
         print "Calibration done"
         np.set_printoptions(precision=2)
@@ -576,10 +582,11 @@ class cameraCalibration:
             if save_file == "y":
                 while not b_write_success:
                     filepath = raw_input("Where do you want to save the file ? (enter file path) ")
-                    filepath = utils.handlePath(filepath, "calib_results.txt")
+                    filepath = utils.handlePath(filepath, "calib_results")
 
                     try:
-                        self.saveParameters(rvecs, tvecs, rms, filepath)
+                        self.saveParameters(rvecs, tvecs, rms, filepath + '.txt')
+                        self.saveParametersJSON(rvecs, tvecs, filepath + '.json')
                         b_write_success = True
 
                     except ValueError:
@@ -701,14 +708,17 @@ class cameraCalibration:
                 calib_results['intrinsics'] = [[], []]
 
                 for _, item in enumerate(self.intrinsics[0]):
-                    calib_results['intrinsics'][0].append(item)
+                    for _, i in enumerate(item):
+                        calib_results['intrinsics'][0].append(i)
 
                 for _, item in enumerate(self.intrinsics[1]):
-                    calib_results['intrinsics'][1].append(item)
+                    for _, i in enumerate(item):
+                        calib_results['intrinsics'][1].append(i)
 
             else:
                 for _, item in enumerate(self.intrinsics[0]):
-                    calib_results['intrinsics'].append(item)
+                    for _, i in enumerate(item):
+                        calib_results['intrinsics'].append(i)
 
         # Distorsion
         if len(self.distorsion) > 0:
@@ -716,20 +726,25 @@ class cameraCalibration:
                 calib_results['distorsion'] = [[], []]
 
                 for _, item in enumerate(self.distorsion[0]):
-                    calib_results['distorsion'][0].append(item)
+                    calib_results['distorsion'][0].append(item[0])
 
                 for _, item in enumerate(self.distorsion[1]):
-                    calib_results['distorsion'][1].append(item)
+                    calib_results['distorsion'][1].append(item[0])
 
             else:
                 for _, item in enumerate(self.distorsion[0]):
-                    calib_results['distorsion'].append(item)
+                    calib_results['distorsion'].append(str(item))
 
         calib_results['picture_size'] = [self.frame_size[0], self.frame_size[1]]
 
         # Motion matrices and we're done
-        [calib_results['rotation'].append(item) for _, item in enumerate(rotation)]
-        [calib_results['translation'].append(item) for _, item in enumerate(translation)]
+        for _, item in enumerate(rotation):
+            for _, i in enumerate(item):
+                calib_results['rotation'].append(i)
+
+        for _, item in enumerate(translation):
+            for _, i in enumerate(item):
+                calib_results['translation'].append(i)
 
         # Use the standard JSON dump
         import json
