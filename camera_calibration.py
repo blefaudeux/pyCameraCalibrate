@@ -168,6 +168,7 @@ class cameraCalibration:
         # Get the path where all the files are stored
         if len(self.file_path) == 0:
             file_read = False
+            path = None
 
             while not file_read:
                 path = raw_input("Path for the calibration files : ")
@@ -180,14 +181,12 @@ class cameraCalibration:
 
         # Get the pattern dimensions in terms of patch number:
         if self.pattern_size == (0, 0):
-            h_dim = utils.getAnswer( "Number of inner corners on the horizontal dimension ? ", '12345678910')
-
-            v_dim = utils.getAnswer( "Number of inner corners on the vertical dimension ? ", '12345678910')
+            h_dim = utils.getAnswer("Number of inner corners on the horizontal dimension ? ", '12345678910')
+            v_dim = utils.getAnswer("Number of inner corners on the vertical dimension ? ", '12345678910')
 
             # Enter the number of squares over each dimensions
             self.pattern_size = (int(h_dim), int(v_dim))
-            print "Chessboard dimensions : {} x {}" \
-                .format(self.pattern_size[0], self.pattern_size[1])
+            print "Chessboard dimensions : {} x {}".format(self.pattern_size[0], self.pattern_size[1])
 
         # Get every patch dimension :
         if (self.sq_size_h, self.sq_size_v) == (0.0, 0.0):
@@ -230,47 +229,37 @@ class cameraCalibration:
     def recordPattern_cam(self):
         n_frames = 0
 
-        pattern_points = np.zeros((np.prod(self.pattern_size), 3), \
-                                  np.float32)
-
-        pattern_points[:, :2] = np.indices(self.pattern_size).T \
-            .reshape(-1, 2)
+        pattern_points = np.zeros((np.prod(self.pattern_size), 3), np.float32)
+        pattern_points[:, :2] = np.indices(self.pattern_size).T.reshape(-1, 2)
 
         cv2.namedWindow("captureStream", cv2.CV_WINDOW_AUTOSIZE)
         cv2.namedWindow("patternDetection", cv2.CV_WINDOW_AUTOSIZE)
 
-        save_files = utils.getAnswer("Would you like \
-            to save picture files ? (y/n)  ", 'yn')
-
+        save_files = utils.getAnswer("Would you like to save picture files ? (y/n)", 'yn') == 'y'
         finished_parsing = False
 
-        if self.cam != '':
+        cam_online = utils.getCam()
+
+        if cam_online:
             while not finished_parsing and (self.max_frames_i == -1 or n_frames < self.max_frames_i):
-                success, new_frame = self.cam.read()
+                success, new_frame = cam_online.read()
 
                 if success:
                     # Convert to B&W (if necessary ?)
                     grey_frame = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
-
-                    found, corners = cv2.findChessboardCorners( \
-                        grey_frame, self.pattern_size)
+                    found, corners = cv2.findChessboardCorners(grey_frame, self.pattern_size)
 
                     cv2.imshow("captureStream", new_frame)
                     cv2.waitKey(2)
 
                     if found:
                         # Refine position
-                        term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT,
-                                30, 0.1)
+                        term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
 
-                        cv2.cornerSubPix(grey_frame, corners,
-                                         (11, 11), (-1, -1), term)
+                        cv2.cornerSubPix(grey_frame, corners, (11, 11), (-1, -1), term)
 
                         # Draw detected pattern
-                        cv2.drawChessboardCorners(new_frame,
-                                                  self.pattern_size,
-                                                  corners, found)
-
+                        cv2.drawChessboardCorners(new_frame, self.pattern_size, corners, found)
                         cv2.imshow("patternDetection", new_frame)
                         cv2.waitKey()
 
@@ -281,22 +270,17 @@ class cameraCalibration:
                         n_frames += 1
                         print "{} patterns found".format(n_frames)
 
-                        if save_files == 'y':
-                            cv2.imwrite("calib_{}.bmp".format(n_frames),
-                                        grey_frame)
+                        if save_files:
+                            cv2.imwrite("calib_{}.bmp".format(n_frames), grey_frame)
+                            cv2.imwrite("calib_{}_pattern.bmp_".format(n_frames), new_frame)
 
-                            cv2.imwrite("calib_{}_pattern.bmp_".format(n_frames),
-                                        new_frame)
-
-        self.frame_size = (len(new_frame[0]), len(new_frame))
+                self.frame_size = (len(new_frame[0]), len(new_frame))
 
         cv2.destroyAllWindows()
 
     def recordPattern_files(self):
         # Get patterns on every picture in "pictures[]"
-        pattern_points = np.zeros((np.prod(self.pattern_size), 3),
-                                  np.float32)
-
+        pattern_points = np.zeros((np.prod(self.pattern_size), 3), np.float32)
         pattern_points[:, :2] = np.indices(self.pattern_size).T.reshape(-1, 2)
         pattern_points[:, 0] = pattern_points[:, 0] * self.sq_size_h
         pattern_points[:, 1] = pattern_points[:, 1] * self.sq_size_v
@@ -324,23 +308,21 @@ class cameraCalibration:
 
             if found and not b_skip_next:
                 # Refine position
-                term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT,
-                        30, 0.1)
+                term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
                 cv2.cornerSubPix(new_frame, corners, (11, 11), (-1, -1), term)
 
                 # Draw detected pattern
-                cv2.drawChessboardCorners(new_frame,
-                                          self.pattern_size,
-                                          corners, found)
+                cv2.drawChessboardCorners(new_frame, self.pattern_size, corners, found)
 
                 # Resize
-                if new_frame.shape[1]>self.frame_size_max[0]:
-                    new_size = (int(new_frame.shape[0]/float(new_frame.shape[1]) * self.frame_size_max[0]), self.frame_size_max[0])
+                if new_frame.shape[1] > self.frame_size_max[0]:
+                    new_size = (int(new_frame.shape[0]/float(new_frame.shape[1]) * self.frame_size_max[0]),
+                                self.frame_size_max[0])
 
                 else:
                     new_size = new_frame.shape
 
-                resized_pict = cv2.resize(new_frame,(new_size[1],new_size[0]))
+                resized_pict = cv2.resize(new_frame, (new_size[1], new_size[0]))
 
                 if not self.auto_validation:
                     # Show and wait for key
@@ -366,19 +348,19 @@ class cameraCalibration:
                         if (n_count % 2) == 0:
                             self.img_points_r.append(corners.reshape(-1, 2))
                             self.obj_points_r.append(pattern_points)
-                            b_skip_next = False # Should be useless
+                            b_skip_next = False     # Should be useless
                             b_left = False
 
                         # Left picture
                         else:
                             self.img_points_l.append(corners.reshape(-1, 2))
                             self.obj_points_l.append(pattern_points)
-                            b_skip_next = False # Don't skip next picture
+                            b_skip_next = False    # Don't skip next picture
                             b_left = True
 
                     n_frames += 1
 
-                else :
+                else:
                     # Picture is rejected. If left picture, skip next one also
                     if (n_count % 2) == 1:
                         print "Left picture missed, next picture is skipped"
@@ -391,7 +373,7 @@ class cameraCalibration:
                         self.obj_points_l.pop()
                         n_frames -= 1
 
-                if n_frames ==1:
+                if n_frames == 1:
                     print "One pattern found"
                 else:
                     print "{} patterns found".format(n_frames)
@@ -449,8 +431,8 @@ class cameraCalibration:
         self.recordPatterns()
 
         # Compute the intrisic parameters first :
-        rvecs = [np.zeros(3, dtype=np.float32) for i in xrange(self.max_frames_i)]
-        tvecs = [np.zeros(3, dtype=np.float32) for i in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
+        tvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
 
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
@@ -467,7 +449,7 @@ class cameraCalibration:
 
         print "Computing intrisic parameters for the second camera"
         res = cv2.calibrateCamera(self.obj_points_r, self.img_points_r, self.frame_size,
-                                  self.intrinsics_r, self.distorsion_r, rvecs, tvecs)
+                                  self.intrinsics[1], self.distorsion[1], rvecs, tvecs)
 
         rms, self.intrinsics[1], self.distorsion[1], rvecs, tvecs = res
 
@@ -484,7 +466,8 @@ class cameraCalibration:
         #        stereo_flags |= cv2.CALIB_FIX_ASPECT_RATIO        # fix aspect ratio
         stereo_flags |= cv2.CALIB_SAME_FOCAL_LENGTH       # Use same focal length
         #        stereo_flags |= cv2.CALIB_ZERO_TANGENT_DIST       # Set tangential distortion to zero
-        #        stereo_flags |= cv2.CALIB_RATIONAL_MODEL          # Use 8 param rational distortion model instead of 5 param plumb bob model
+        #        stereo_flags |= cv2.CALIB_RATIONAL_MODEL
+        #  Use 8 param rational distortion model instead of 5 param plumb bob model
 
         res = cv2.stereoCalibrate(self.obj_points_l,
                                   self.img_points_l, self.img_points_r,
@@ -605,40 +588,36 @@ class cameraCalibration:
                     time.sleep(2)
 
         else:
-            calib_file_path = utils.handlePath(self.file_path, "calib_results.txt")
-            self.saveParameters( rvecs, tvecs, rms, calib_file_path)
+            calib_file_path = utils.handlePath(self.file_path, "calib_results")
+            self.saveParameters(rvecs, tvecs, rms, calib_file_path + '.txt')
+            self.saveParametersJSON(rvecs, tvecs, calib_file_path + '.json')
             print "Saved calibration file"
 
         return
 
     def saveParameters(self, rotation, translation, rms, path):
-        FILE = open(path, "w")
+        with open(path, "w") as FILE:
+            # Write parameters :
+            FILE.write("Calibration error (pixels) over {} pictures: \n".format(self.n_pattern_found))
+            FILE.write("{}\n\n".format(rms))
 
-        # Write parameters :
-        FILE.write("Calibration error (pixels) over {} pictures: \n".format(self.n_pattern_found))
-        FILE.write("{}\n\n".format(rms))
+            FILE.write("Intrisic Matrix : \n")
+            FILE.write("{}\n\n".format(self.intrinsics))
 
-        FILE.write("Intrisic Matrix : \n")
-        FILE.write("{}\n\n".format(self.intrinsics))
+            FILE.write("Distorsion coefficients :\n")
+            FILE.write("{}\n\n".format(self.distorsion))
 
-        FILE.write("Distorsion coefficients :\n")
-        FILE.write("{}\n\n".format(self.distorsion))
+            FILE.write("Rotations :\n")
+            FILE.write("{}\n\n".format(rotation))
 
-        FILE.write("Rotations :\n")
-        FILE.write("{}\n\n".format(rotation))
+            FILE.write("Translations :\n")
+            FILE.write("{}\n\n".format(translation))
 
-        FILE.write("Translations :\n")
-        FILE.write("{}\n\n".format(translation))
-
-        FILE.write("Pattern used : \n")
-        FILE.write("{} squares\n".format(self.pattern_size))
-        FILE.write("{}m x {}m \n".format(self.sq_size_h, self.sq_size_v))
-
-        # Close file
-        FILE.close()
+            FILE.write("Pattern used : \n")
+            FILE.write("{} squares\n".format(self.pattern_size))
+            FILE.write("{}m x {}m \n".format(self.sq_size_h, self.sq_size_v))
 
     def saveParametersXML(self, rotation, translation, path):
-
         # Build XML structure from the settings to be saved
         cam_calibration = ET.Element('camera_calibration')
         cam_mat_0 = ET.SubElement(cam_calibration, 'camera_matrix_0')
@@ -709,6 +688,58 @@ class cameraCalibration:
         pict_size.set('height', str(self.frame_size[1]))
 
         # Write to file
-        tree = ET.ElementTree(cam_calibration)
-        tree.write(path)
+        with ET.ElementTree(cam_calibration) as tree:
+            tree.write(path)
+
+    def saveParametersJSON(self, rotation, translation, path):
+        # Fill in the dict object first
+        calib_results = {'intrinsics': [], 'distorsion': [], 'rotation': [], 'translation': [], 'picture_size': []}
+
+        # Intrinsics
+        if len(self.intrinsics) > 0:
+            if self.stereo:
+                calib_results['intrinsics'] = [[], []]
+
+                for _, item in enumerate(self.intrinsics[0]):
+                    calib_results['intrinsics'][0].append(item)
+
+                for _, item in enumerate(self.intrinsics[1]):
+                    calib_results['intrinsics'][1].append(item)
+
+            else:
+                for _, item in enumerate(self.intrinsics[0]):
+                    calib_results['intrinsics'].append(item)
+
+        # Distorsion
+        if len(self.distorsion) > 0:
+            if self.stereo:
+                calib_results['distorsion'] = [[], []]
+
+                for _, item in enumerate(self.distorsion[0]):
+                    calib_results['distorsion'][0].append(item)
+
+                for _, item in enumerate(self.distorsion[1]):
+                    calib_results['distorsion'][1].append(item)
+
+            else:
+                for _, item in enumerate(self.distorsion[0]):
+                    calib_results['distorsion'].append(item)
+
+        calib_results['picture_size'] = [self.frame_size[0], self.frame_size[1]]
+
+        # Motion matrices and we're done
+        [calib_results['rotation'].append(item) for _, item in enumerate(rotation)]
+        [calib_results['translation'].append(item) for _, item in enumerate(translation)]
+
+        # Use the standard JSON dump
+        import json
+        with open(path, 'w') as fp:
+            json.dump(calib_results, fp)
+
+    def loadJSON(self, path):
+        import json
+        with open(path, 'r') as fp:
+            calib_params = json.load(fp)
+
+        # TODO: Parse the dictionary
 
