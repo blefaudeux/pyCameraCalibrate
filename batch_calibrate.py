@@ -32,7 +32,7 @@ class batchCalibration:
     def __init__(self):
         self.root_path = ''
         self.folder_list = []
-        self.pattern_size = (0,0) # Number of inner squares on each dimension
+        self.pattern_size = (0, 0)  # Number of inner squares on each dimension
         self.sq_size_h = 0.0
         self.sq_size_v = 0.0
     
@@ -100,7 +100,7 @@ class batchCalibration:
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
                     
-                    if os.path.exists(path +"/calib_results.txt"):
+                    if os.path.exists(path + "/calib_results.txt"):
                         print "Folder {} already contains calibration results".format(directory)
                     else:
                         new_cam.calibrate()

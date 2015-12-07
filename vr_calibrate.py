@@ -22,3 +22,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+# Load the original camera matrix
+#TODO: Ben
+
+# Calibrate
+#TODO: Ben - as usual
+
+# Deduct the VR set-only camera matrix
+#TODO: Ben
+
+
+
