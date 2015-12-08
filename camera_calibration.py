@@ -46,6 +46,7 @@ class cameraCalibration:
     # [show-pictures, auto_validation, auto_max_pict_number, auto_save, 'file_path', 
     #   pattern_size(x,y), patch_dimensions(x,y), mono]
     def __init__(self, parameters=None):
+        self.pict_names = []
         self.obj_points = []
         self.img_points = []
 
@@ -132,6 +133,7 @@ class cameraCalibration:
         if not os.path.isdir(folder_path):
             print "Trouble reading folder path {}".format(folder_path)
 
+        self.pict_names = []
         for dirname, dirnames, filenames in os.walk(folder_path):
 
             filenames = utils.sortNicely(filenames)
@@ -144,11 +146,12 @@ class cameraCalibration:
                 if filename[-3:] == "bmp" or filename[-3:] == "png" or filename[-3:] == "jpg":
 
                     try:
-                        self.pictures.append(cv2.imread(full_filepath, cv2.CV_LOAD_IMAGE_GRAYSCALE))
+                        self.pictures.append(cv2.imread(full_filepath))
                         if self.pictures[n_files] is None:
                             self.pictures.pop()
                             print "Error loading file {}".format(filename)
                         else:
+                            self.pict_names.append(full_filepath)
                             n_files += 1
 
                     except ValueError:
@@ -226,6 +229,12 @@ class cameraCalibration:
                 except ValueError:
                     print "Cannot determine max number of frames"
 
+    def loadJSON(self, path):
+        import json
+        with open(path, 'r') as fp:
+            calib_params = json.load(fp)
+            # TODO: Parse the dictionary
+
     def recordPattern_cam(self):
         n_frames = 0
 
@@ -292,15 +301,15 @@ class cameraCalibration:
 
         if not self.auto_validation:
             cv2.namedWindow("patternDetection", cv2.CV_WINDOW_AUTOSIZE)
-            print "Recording patterns from files, press r to reject"
+            print "Recording patterns from files, press r to reject, other to accept"
         else:
             print "Looking for patterns.."
 
         for new_frame in self.pictures:
             n_count += 1
 
-            new_pict = np.array(new_frame)
-
+            gray = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
+            new_pict = np.array(gray)
             found, corners = cv2.findChessboardCorners(new_pict, self.pattern_size)
 
             if not found:
@@ -309,18 +318,17 @@ class cameraCalibration:
             if found and not b_skip_next:
                 # Refine position
                 term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
-                cv2.cornerSubPix(new_frame, corners, (11, 11), (-1, -1), term)
+                cv2.cornerSubPix(new_pict, corners, (11, 11), (-1, -1), term)
 
                 # Draw detected pattern
                 cv2.drawChessboardCorners(new_frame, self.pattern_size, corners, found)
 
                 # Resize
+                new_size = new_frame.shape
+
                 if new_frame.shape[1] > self.frame_size_max[0]:
                     new_size = (int(new_frame.shape[0]/float(new_frame.shape[1]) * self.frame_size_max[0]),
                                 self.frame_size_max[0])
-
-                else:
-                    new_size = new_frame.shape
 
                 resized_pict = cv2.resize(new_frame, (new_size[1], new_size[0]))
 
@@ -421,7 +429,7 @@ class cameraCalibration:
         print "Patterns collection finished, starting calibration"
 
     def stereoCalibrate(self):
-        print "If you calibrate from files, make sure stereo files are \n in the left-right-left-right order"
+        print "-- If you calibrate from files, make sure stereo files are \n in the left-right-left-right order --"
 
         # Get settings & files
         self.stereo = True
@@ -454,8 +462,7 @@ class cameraCalibration:
         rms, self.intrinsics[1], self.distorsion[1], rvecs, tvecs = res
 
         # Compute calibration parameters :
-        print "Calibrating cameras.."
-        print "Frame size : {}".format(self.frame_size)
+        print "Calibrating cameras.. \nFrame size : {}".format(self.frame_size)
 
         # set stereo flags
         stereo_flags = 0
@@ -490,14 +497,9 @@ class cameraCalibration:
             int_right, dist_right)
 
         print "\nRotation : \n{}\n".format(R)
-
         print "\nTranslation : \n{}\n".format(T)
-
         print "\nEssential matrix : \n{}\n".format(E)  # Essential matrix
-
         print "\nFundamental matrix : \n{}\n".format(F)  # Fundamental matrix
-
-        # TODO : Compute perspective matrix !
 
         # Save calibration parameters
         save_file = utils.getAnswer("Would you like to save the results ? (y/n) ", 'yn')
@@ -524,7 +526,8 @@ class cameraCalibration:
 
                         print "Parameters file written"
                         b_write_success = True
-                except:
+
+                except IOError:
                     print "Wrong path, please correct"
 
                 time.sleep(2)
@@ -547,39 +550,26 @@ class cameraCalibration:
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
         self.distorsion.append(np.zeros(8, dtype=np.float32))
 
-        rms, self.intrinsics[0], self.distorsion[0], _rvecs, _tvecs = cv2.calibrateCamera(_obj_points, _img_points,
-                                                                                          self.frame_size,
-                                                                                          self.intrinsics[0],
-                                                                                          self.distorsion[0],
-                                                                                          rvecs, tvecs)
+        ret = cv2.calibrateCamera(_obj_points, _img_points, self.frame_size, self.intrinsics[0], self.distorsion[0],
+                                  rvecs, tvecs)
+
+        [rms, self.intrinsics[0], self.distorsion[0], _, _] = ret
 
         print "Calibration done"
         np.set_printoptions(precision=2)
         np.set_printoptions(suppress=True)
 
-        print "Residual RMS (pxl units) :\n"
-        print(rms)
-
-        print "\nRotations :\n"
-        print(rvecs)
-
-        print "\nTranslations :\n"
-        print(tvecs)
-
-        print "\nCalibration parameters : Intrinsics \n"
-        print(self.intrinsics)
-
-        print "Distorsion \n"
-        print(self.distorsion)
-
+        print "Residual RMS (pxl units) :\n{}".format(rms)
+        print "\nRotations :\n {} \nTranslations :\n {}".format(rvecs, tvecs)
+        print "\nCalibration parameters : Intrinsics \n {}".format(self.intrinsics[0])
+        print "Distorsion \n {}".format(self.distorsion[0])
         print "\nNumber of pictures used : {}".format(self.n_pattern_found)
 
         # Save calibration parameters
         if not self.auto_save:
-            save_file = utils.getAnswer("Would you like to save the results ? (y/n) ", 'yn')
             b_write_success = False
 
-            if save_file == "y":
+            if utils.getAnswer("Would you like to save the results ? (y/n) ", 'yn') == "y":
                 while not b_write_success:
                     filepath = raw_input("Where do you want to save the file ? (enter file path) ")
                     filepath = utils.handlePath(filepath, "calib_results")
@@ -600,7 +590,27 @@ class cameraCalibration:
             self.saveParametersJSON(rvecs, tvecs, calib_file_path + '.json')
             print "Saved calibration file"
 
+        # Test the distorsion parameters:
+        if utils.getAnswer("Would you like to test the distorsion parameters ? (y/n)", 'yn') == 'y':
+            root_folder = os.path.dirname(self.pict_names[0])
+            dist_folder = os.path.join(root_folder, 'undistorted')
+            if not os.path.exists(dist_folder):
+                os.makedirs(dist_folder)
+
+            for pict, name in zip(self.pictures, self.pict_names):
+                undistorted = self.undistort(pict)
+                pict_name = os.path.basename(name)
+                cv2.imwrite(os.path.join(dist_folder, pict_name[:-3] + 'undistorted.jpg'), undistorted)
+                print "Image {} undistorted".format(pict_name)
+
         return
+
+    def undistort(self, frame):
+        if self.stereo:
+            print "Undistort : cannot handle stereo case"
+            return None
+
+        return cv2.undistort(frame, self.intrinsics[0], self.distorsion[0])
 
     def saveParameters(self, rotation, translation, rms, path):
         with open(path, "w") as FILE:
@@ -609,16 +619,16 @@ class cameraCalibration:
             FILE.write("{}\n\n".format(rms))
 
             FILE.write("Intrisic Matrix : \n")
-            FILE.write("{}\n\n".format(self.intrinsics))
+            FILE.write("{}\n\n".format(self.intrinsics[0]))
 
             FILE.write("Distorsion coefficients :\n")
-            FILE.write("{}\n\n".format(self.distorsion))
+            FILE.write("{}\n\n".format(self.distorsion[0]))
 
             FILE.write("Rotations :\n")
-            FILE.write("{}\n\n".format(rotation))
+            FILE.write("{}\n\n".format(rotation[0]))
 
             FILE.write("Translations :\n")
-            FILE.write("{}\n\n".format(translation))
+            FILE.write("{}\n\n".format(translation[0]))
 
             FILE.write("Pattern used : \n")
             FILE.write("{} squares\n".format(self.pattern_size))
@@ -750,11 +760,4 @@ class cameraCalibration:
         import json
         with open(path, 'w') as fp:
             json.dump(calib_results, fp)
-
-    def loadJSON(self, path):
-        import json
-        with open(path, 'r') as fp:
-            calib_params = json.load(fp)
-
-        # TODO: Parse the dictionary
 
