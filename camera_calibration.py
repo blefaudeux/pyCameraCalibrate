@@ -625,10 +625,10 @@ class cameraCalibration:
             FILE.write("{}\n\n".format(self.distorsion[0]))
 
             FILE.write("Rotations :\n")
-            FILE.write("{}\n\n".format(rotation[0]))
+            FILE.write("{}\n\n".format(rotation))
 
             FILE.write("Translations :\n")
-            FILE.write("{}\n\n".format(translation[0]))
+            FILE.write("{}\n\n".format(translation))
 
             FILE.write("Pattern used : \n")
             FILE.write("{} squares\n".format(self.pattern_size))

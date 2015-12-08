@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """
 Created on Mon Nov 11 11:32:37 2013
