@@ -562,8 +562,7 @@ class cameraCalibration:
                     filepath = utils.handlePath(filepath, "calib_results")
 
                     try:
-                        self.saveParameters(rvecs, tvecs, rms, filepath + '.txt')
-                        self.saveParametersJSON(rvecs, tvecs, filepath + '.json')
+                        self.saveParametersJSON(rvecs, tvecs, rms, filepath + '.json')
                         b_write_success = True
 
                     except ValueError:
@@ -573,8 +572,7 @@ class cameraCalibration:
 
         else:
             calib_file_path = utils.handlePath(self.file_path, "calib_results")
-            self.saveParameters(rvecs, tvecs, rms, calib_file_path + '.txt')
-            self.saveParametersJSON(rvecs, tvecs, calib_file_path + '.json')
+            self.saveParametersJSON(rvecs, tvecs, rms, calib_file_path + '.json')
             print "Saved calibration file"
 
         # Test the distorsion parameters:
@@ -599,28 +597,6 @@ class cameraCalibration:
 
         return cv2.undistort(frame, self.intrinsics[0], self.distorsion[0])
 
-    def saveParameters(self, rotation, translation, rms, path):
-        with open(path, "w") as FILE:
-            # Write parameters :
-            FILE.write("Calibration error (pixels) over {} pictures: \n".format(self.n_pattern_found))
-            FILE.write("{}\n\n".format(rms))
-
-            FILE.write("Intrisic Matrix : \n")
-            FILE.write("{}\n\n".format(self.intrinsics[0]))
-
-            FILE.write("Distorsion coefficients :\n")
-            FILE.write("{}\n\n".format(self.distorsion[0]))
-
-            FILE.write("Rotations :\n")
-            FILE.write("{}\n\n".format(rotation))
-
-            FILE.write("Translations :\n")
-            FILE.write("{}\n\n".format(translation))
-
-            FILE.write("Pattern used : \n")
-            FILE.write("{} squares\n".format(self.pattern_size))
-            FILE.write("{}m x {}m \n".format(self.sq_size_h, self.sq_size_v))
-
     def saveParametersJSON(self, rotation, translation, rms, path):
         # Fill in the dict object first
         calib_results = {'intrinsics': [],
@@ -630,7 +606,8 @@ class cameraCalibration:
                          'picture_size': [],
                          'parameters': {'number_of_pictures': self.n_pattern_found,
                                         'residue': rms,
-                                        'pattern_size': self.pattern_size}
+                                        'pattern_shape': self.pattern_size,
+                                        'pattern_size': [self.sq_size_h, self.sq_size_v]}
                          }
 
         # Intrinsics
