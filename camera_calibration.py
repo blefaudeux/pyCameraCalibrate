@@ -32,12 +32,6 @@ import sys
 import utils
 import time
 
-# Import XML
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
-
 
 class cameraCalibration:
     # "Parameters" field can be used to change some settings
@@ -508,24 +502,17 @@ class cameraCalibration:
 
         if save_file == "y":
             while not b_write_success:
-                save_XML = utils.getAnswer("Save in XML format ? (y/n) ", "yn")
-
                 filepath = raw_input("Where do you want to save the file ? (enter file path) ")
 
                 try:
-                    if save_XML:
-                        calib_file = utils.handlePath(filepath, "camera_calibration.xml")
-                        self.saveParametersXML(R, T, calib_file)
+                    file_left = utils.handlePath(filepath, "_left.txt")
+                    self.saveParameters(int_left, dist_left, R, T, file_left, self.n_pattern_found)
 
-                    else:
-                        file_left = utils.handlePath(filepath, "_left.txt")
-                        self.saveParameters(int_left, dist_left, R, T, file_left, self.n_pattern_found)
+                    file_right = utils.handlePath(filepath, "_right.txt")
+                    self.saveParameters(int_right, dist_right, R, T, file_right, self.n_pattern_found)
 
-                        file_right = utils.handlePath(filepath, "_right.txt")
-                        self.saveParameters(int_right, dist_right, R, T, file_right, self.n_pattern_found)
-
-                        print "Parameters file written"
-                        b_write_success = True
+                    print "Parameters file written"
+                    b_write_success = True
 
                 except IOError:
                     print "Wrong path, please correct"
@@ -634,83 +621,17 @@ class cameraCalibration:
             FILE.write("{} squares\n".format(self.pattern_size))
             FILE.write("{}m x {}m \n".format(self.sq_size_h, self.sq_size_v))
 
-    def saveParametersXML(self, rotation, translation, path):
-        # Build XML structure from the settings to be saved
-        cam_calibration = ET.Element('camera_calibration')
-        cam_mat_0 = ET.SubElement(cam_calibration, 'camera_matrix_0')
-        dist_mat_0 = ET.SubElement(cam_calibration, 'dist_matrix_0')
-
-        if self.stereo:
-            dist_mat_1 = ET.SubElement(cam_calibration, 'dist_matrix_1')
-            cam_mat_1 = ET.SubElement(cam_calibration, 'camera_matrix_1')
-
-        rot_mat = ET.SubElement(cam_calibration, 'rotation_matrix')
-        tr_mat = ET.SubElement(cam_calibration, 'translation_matrix')
-        pict_size = ET.SubElement(cam_calibration, 'picture_size')
-
-        # Fill camera matrices (intrinsics)
-        cam_mat_0.set('a0', str(self.intrinsics[0][0, 0]))
-        cam_mat_0.set('a1', str(self.intrinsics[0][0, 1]))
-        cam_mat_0.set('a2', str(self.intrinsics[0][0, 2]))
-        cam_mat_0.set('b0', str(self.intrinsics[0][1, 0]))
-        cam_mat_0.set('b1', str(self.intrinsics[0][1, 1]))
-        cam_mat_0.set('b2', str(self.intrinsics[0][1, 2]))
-        cam_mat_0.set('c0', str(self.intrinsics[0][2, 0]))
-        cam_mat_0.set('c1', str(self.intrinsics[0][2, 1]))
-        cam_mat_0.set('c2', str(self.intrinsics[0][2, 2]))
-
-        if self.stereo:
-            cam_mat_1.set('a0',str(self.intrinsics[1][0, 0]))
-            cam_mat_1.set('a1',str(self.intrinsics[1][0, 1]))
-            cam_mat_1.set('a2',str(self.intrinsics[1][0, 2]))
-            cam_mat_1.set('b0',str(self.intrinsics[1][1, 0]))
-            cam_mat_1.set('b1',str(self.intrinsics[1][1, 1]))
-            cam_mat_1.set('b2',str(self.intrinsics[1][1, 2]))
-            cam_mat_1.set('c0',str(self.intrinsics[1][2, 0]))
-            cam_mat_1.set('c1',str(self.intrinsics[1][2, 1]))
-            cam_mat_1.set('c2',str(self.intrinsics[1][2, 2]))
-
-        # Fill in distorsion matrix
-        dist_mat_0.set('k1', str(self.distorsion[0][0]))
-        dist_mat_0.set('k2', str(self.distorsion[0][1]))
-        dist_mat_0.set('p1', str(self.distorsion[0][2]))
-        dist_mat_0.set('p2', str(self.distorsion[0][3]))
-        dist_mat_0.set('k3', str(self.distorsion[0][4]))
-
-        if self.stereo:
-            dist_mat_1.set('k1', str(self.distorsion_r[0]))
-            dist_mat_1.set('k2', str(self.distorsion_r[1]))
-            dist_mat_1.set('p1', str(self.distorsion_r[2]))
-            dist_mat_1.set('p2', str(self.distorsion_r[3]))
-            dist_mat_1.set('k3', str(self.distorsion_r[4]))
-
-        # Fill in rotation matrix
-        rot_mat.set('a0', str(rotation[0, 0]))
-        rot_mat.set('a1', str(rotation[0, 1]))
-        rot_mat.set('a2', str(rotation[0, 2]))
-        rot_mat.set('b0', str(rotation[1, 0]))
-        rot_mat.set('b1', str(rotation[1, 1]))
-        rot_mat.set('b2', str(rotation[1, 2]))
-        rot_mat.set('c0', str(rotation[2, 0]))
-        rot_mat.set('c1', str(rotation[2, 1]))
-        rot_mat.set('c2', str(rotation[2, 2]))
-
-        # Fill in translation matrix
-        tr_mat.set('a0', str(translation[0, 0]))
-        tr_mat.set('a1', str(translation[1, 0]))
-        tr_mat.set('a2', str(translation[2, 0]))
-
-        # Fill in picture size
-        pict_size.set('width', str(self.frame_size[0]))
-        pict_size.set('height', str(self.frame_size[1]))
-
-        # Write to file
-        with ET.ElementTree(cam_calibration) as tree:
-            tree.write(path)
-
-    def saveParametersJSON(self, rotation, translation, path):
+    def saveParametersJSON(self, rotation, translation, rms, path):
         # Fill in the dict object first
-        calib_results = {'intrinsics': [], 'distorsion': [], 'rotation': [], 'translation': [], 'picture_size': []}
+        calib_results = {'intrinsics': [],
+                         'distorsion': [],
+                         'rotation': [],
+                         'translation': [],
+                         'picture_size': [],
+                         'parameters': {'number_of_pictures': self.n_pattern_found,
+                                        'residue': rms,
+                                        'pattern_size': self.pattern_size}
+                         }
 
         # Intrinsics
         if len(self.intrinsics) > 0:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """
 Created on Mon Nov 11 11:32:37 2013
@@ -110,4 +110,4 @@ class batchCalibration:
 
 # Run this script
 new_run = batchCalibration()
-new_run.calibrate()
+new_run.calibrate(False)
