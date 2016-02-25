@@ -657,5 +657,5 @@ class cameraCalibration:
         # Use the standard JSON dump
         import json
         with open(path, 'w') as fp:
-            json.dump(calib_results, fp)
+            json.dump(calib_results, fp, sort_keys=True, indent=4, separators=(',', ': '))
 
