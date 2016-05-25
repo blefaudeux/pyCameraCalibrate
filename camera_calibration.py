@@ -624,17 +624,14 @@ class CameraCalibration:
                 calib_results['intrinsics'] = [[], []]
 
                 for _, item in enumerate(self.intrinsics[0]):
-                    for _, i in enumerate(item):
-                        calib_results['intrinsics'][0].append(i)
+                    calib_results['intrinsics'][0].append(list(item))
 
                 for _, item in enumerate(self.intrinsics[1]):
-                    for _, i in enumerate(item):
-                        calib_results['intrinsics'][1].append(i)
+                    calib_results['intrinsics'][1].append(list(item))
 
             else:
                 for _, item in enumerate(self.intrinsics[0]):
-                    for _, i in enumerate(item):
-                        calib_results['intrinsics'].append(i)
+                    calib_results['intrinsics'].append(list(item))
 
         # Distorsion
         if len(self.distorsion) > 0:
@@ -655,10 +652,10 @@ class CameraCalibration:
 
         # Motion matrices and we're done
         for _, rot in enumerate(rotation):
-            calib_results['rotation'].append(rot)
+            calib_results['rotation'].append(list(rot))
 
         for _, trans in enumerate(translation):
-            calib_results['translation'].append(trans)
+            calib_results['translation'].append(list(trans))
 
         # Use the standard JSON dump
         import json
