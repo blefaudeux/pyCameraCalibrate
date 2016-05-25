@@ -108,6 +108,6 @@ class batchCalibration:
         raw_input("\nCalibration done, press any key to exit")
 
 
-# Run this script
-new_run = batchCalibration()
-new_run.calibrate(False)
+if __name__ == '__main__':
+    new_run = batchCalibration()
+    new_run.calibrate(False)

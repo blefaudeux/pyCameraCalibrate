@@ -659,3 +659,8 @@ class cameraCalibration:
         with open(path, 'w') as fp:
             json.dump(calib_results, fp, sort_keys=True, indent=4, separators=(',', ': '))
 
+
+
+if __name__ == '__main__':
+    new_instance = cameraCalibration()
+    new_instance.calibrate()
