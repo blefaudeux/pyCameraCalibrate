@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/python2
 
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """
 Created on Mon Nov 11 11:32:37 2013
@@ -28,7 +28,7 @@ import utils
 import os
 
 
-class batchCalibration:
+class BatchCalibration:
     def __init__(self):
         self.root_path = ''
         self.folder_list = []
@@ -77,15 +77,13 @@ class batchCalibration:
             self.sq_size_h = 0.02545
             self.sq_size_v = 0.02545
             
-            print "Used parameters :"
-            print "Pattern size : {}".format(self.pattern_size)
-            print "Physical dimensions : {}m x {}m \n ".format(self.sq_size_h, self.sq_size_v)
+            print("Used parameters :")
+            print("Pattern size : {}".format(self.pattern_size))
+            print("Physical dimensions : {}m x {}m \n ".format(self.sq_size_h, self.sq_size_v))
             
         # Get the root folder, Get all the subfolders, 
         # do all the subsequent calibrations and record the results 
-        path = raw_input("Root path for the calibration folders : ")           
-        
-        path = os.path.join(path, '')
+        path = os.path.join(raw_input("Root path for the calibration folders : "), '')
        
         for dirpath, dirnames, filenames in os.walk(path):
 
@@ -96,7 +94,7 @@ class batchCalibration:
                     settings = (False, True, True, True, path, self.pattern_size,
                                 (self.sq_size_h, self.sq_size_v), False)
                     
-                    new_cam = cam_calib.cameraCalibration(settings)
+                    new_cam = cam_calib.CameraCalibration(settings)
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
                     
@@ -109,5 +107,5 @@ class batchCalibration:
 
 
 if __name__ == '__main__':
-    new_run = batchCalibration()
+    new_run = BatchCalibration()
     new_run.calibrate(False)

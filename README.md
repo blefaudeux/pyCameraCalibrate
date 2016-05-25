@@ -12,5 +12,5 @@ Nothing fancy, just a useful tool in some circumstances..
 * *python camera_calibration.py* for a one-time calibration
 
 # Installation requisites :
-* Python
+* Python 2.xx (opencv bindings are a limiting factor here)
 * OpenCV with python bindings

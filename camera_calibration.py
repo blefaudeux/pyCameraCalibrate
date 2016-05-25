@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2
 
 """
 Created on Wed Oct 31 14:26:31 2012
@@ -33,7 +33,7 @@ import utils
 import time
 
 
-class cameraCalibration:
+class CameraCalibration:
     # "Parameters" field can be used to change some settings
     # namely the automatic pattern validation and the visualisation
     # it should be a tuple of the form :
@@ -107,11 +107,11 @@ class cameraCalibration:
 
         # Start the appropriate calibration processes
         if self.stereo:
-            self.stereoCalibrate()
+            self._calibrate_stereo()
         else:
-            self.monoCalibrate()
+            self._calibrate_mono()
 
-    def readFiles(self, folder_path):
+    def _read_files(self, folder_path):
         # Read in folders, subfolders,...
         n_files = 0
 
@@ -125,17 +125,17 @@ class cameraCalibration:
         folder_path = os.path.abspath(folder_path)
 
         if not os.path.isdir(folder_path):
-            print "Trouble reading folder path {}".format(folder_path)
+            print("Trouble reading folder path {}".format(folder_path))
 
         self.pict_names = []
-        for dirname, dirnames, filenames in os.walk(folder_path):
+        for dirname, _, filenames in os.walk(folder_path):
 
             filenames = utils.sortNicely(filenames)
 
             for filename in filenames:
                 print "Reading file {}".format(filename)
 
-                full_filepath = os.path.join(folder_path, filename)
+                full_filepath = os.path.join(dirname, filename)
 
                 if filename[-3:] == "bmp" or filename[-3:] == "png" or filename[-3:] == "jpg":
 
@@ -143,25 +143,27 @@ class cameraCalibration:
                         self.pictures.append(cv2.imread(full_filepath))
                         if self.pictures[n_files] is None:
                             self.pictures.pop()
-                            print "Error loading file {}".format(filename)
+                            print " {}".format(filename)
                         else:
                             self.pict_names.append(full_filepath)
                             n_files += 1
 
                     except ValueError:
-                        print "Error loading file {}".format(filename)
+                        print " {}".format(filename)
+
+            break   # Just read one level
 
         if n_files == 0:
             sys.exit("Could not read any picture")
 
         if n_files == 0:
-            print("Could not read any picture, please correct file path")
+            print "Could not read any picture, please correct file path"
             return False
 
         print "{} pictures read".format(n_files)
         return True
 
-    def chooseCalibrationSettings(self):
+    def _choose_calibration_settings(self):
         # Get the path where all the files are stored
         if len(self.file_path) == 0:
             file_read = False
@@ -169,12 +171,12 @@ class cameraCalibration:
 
             while not file_read:
                 path = raw_input("Path for the calibration files : ")
-                file_read = self.readFiles(path)
+                file_read = self._read_files(path)
 
             self.file_path = path
 
         else:
-            self.readFiles(self.file_path)
+            self._read_files(self.file_path)
 
         # Get the pattern dimensions in terms of patch number:
         if self.pattern_size == (0, 0):
@@ -223,13 +225,7 @@ class cameraCalibration:
                 except ValueError:
                     print "Cannot determine max number of frames"
 
-    def loadJSON(self, path):
-        import json
-        with open(path, 'r') as fp:
-            calib_params = json.load(fp)
-            # TODO: Parse the dictionary
-
-    def recordPattern_cam(self):
+    def _record_pattern_cam(self):
         n_frames = 0
 
         pattern_points = np.zeros((np.prod(self.pattern_size), 3), np.float32)
@@ -281,7 +277,7 @@ class cameraCalibration:
 
         cv2.destroyAllWindows()
 
-    def recordPattern_files(self):
+    def _record_pattern_files(self):
         # Get patterns on every picture in "pictures[]"
         pattern_points = np.zeros((np.prod(self.pattern_size), 3), np.float32)
         pattern_points[:, :2] = np.indices(self.pattern_size).T.reshape(-1, 2)
@@ -409,28 +405,28 @@ class cameraCalibration:
 
         return n_frames
 
-    def recordPatterns(self):
+    def _record_pattern(self):
         if self.use_camera:
-            self.recordPattern_cam()
+            self._record_pattern_cam()
             self.n_pattern_found = len(self.img_points)
 
         else:
-            self.n_pattern_found = self.recordPattern_files()
+            self.n_pattern_found = self._record_pattern_files()
 
         if self.n_pattern_found == 0:
             sys.exit("Calibration could not finish")
 
         print "Patterns collection finished, starting calibration"
 
-    def stereoCalibrate(self):
+    def _calibrate_stereo(self):
         print "-- If you calibrate from files, make sure stereo files are \n in the left-right-left-right order --"
 
         # Get settings & files
         self.stereo = True
-        self.chooseCalibrationSettings()
+        self._choose_calibration_settings()
 
         # Get patterns
-        self.recordPatterns()
+        self._record_pattern()
 
         # Compute the intrisic parameters first :
         rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
@@ -521,12 +517,12 @@ class cameraCalibration:
 
         return
 
-    def monoCalibrate(self):
+    def _calibrate_mono(self):
         # Get settings
-        self.chooseCalibrationSettings()
+        self._choose_calibration_settings()
 
         # Get patterns
-        self.recordPatterns()
+        self._record_pattern()
 
         # Compute intrinsic parameters
         rvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]    # Rotation and translation matrix
@@ -562,7 +558,7 @@ class cameraCalibration:
                     filepath = utils.handlePath(filepath, "calib_results")
 
                     try:
-                        self.saveParametersJSON(rvecs, tvecs, rms, filepath + '.json')
+                        self._json_save(rvecs, tvecs, rms, filepath + '.json')
                         b_write_success = True
 
                     except ValueError:
@@ -572,7 +568,7 @@ class cameraCalibration:
 
         else:
             calib_file_path = utils.handlePath(self.file_path, "calib_results")
-            self.saveParametersJSON(rvecs, tvecs, rms, calib_file_path + '.json')
+            self._json_save(rvecs, tvecs, rms, calib_file_path + '.json')
             print "Saved calibration file"
 
         # Test the distorsion parameters:
@@ -583,31 +579,43 @@ class cameraCalibration:
                 os.makedirs(dist_folder)
 
             for pict, name in zip(self.pictures, self.pict_names):
-                undistorted = self.undistort(pict)
+                undistorted = self._undistort_frame(pict)
                 pict_name = os.path.basename(name)
                 cv2.imwrite(os.path.join(dist_folder, pict_name[:-3] + 'undistorted.jpg'), undistorted)
                 print "Image {} undistorted".format(pict_name)
 
         return
 
-    def undistort(self, frame):
+    def _undistort_frame(self, frame):
         if self.stereo:
             print "Undistort : cannot handle stereo case"
             return None
 
         return cv2.undistort(frame, self.intrinsics[0], self.distorsion[0])
 
-    def saveParametersJSON(self, rotation, translation, rms, path):
+    @staticmethod
+    def _json_load(path):
+        import json
+        with open(path, 'r') as fp:
+            calib_params = json.load(fp)
+            # TODO: Parse the dictionary
+
+        return calib_params
+
+    def _json_save(self, rotation, translation, rms, path):
         # Fill in the dict object first
         calib_results = {'intrinsics': [],
                          'distorsion': [],
                          'rotation': [],
                          'translation': [],
                          'picture_size': [],
-                         'parameters': {'number_of_pictures': self.n_pattern_found,
-                                        'residue': rms,
-                                        'pattern_shape': self.pattern_size,
-                                        'pattern_size': [self.sq_size_h, self.sq_size_v]}
+                         'parameters':
+                             {
+                                 'number_of_pictures': self.n_pattern_found,
+                                 'residue': rms,
+                                 'pattern_shape': self.pattern_size,
+                                 'pattern_size': [self.sq_size_h, self.sq_size_v]
+                             }
                          }
 
         # Intrinsics
@@ -646,13 +654,11 @@ class cameraCalibration:
         calib_results['picture_size'] = [self.frame_size[0], self.frame_size[1]]
 
         # Motion matrices and we're done
-        for _, item in enumerate(rotation):
-            for _, i in enumerate(item):
-                calib_results['rotation'].append(i)
+        for _, rot in enumerate(rotation):
+            calib_results['rotation'].append(rot)
 
-        for _, item in enumerate(translation):
-            for _, i in enumerate(item):
-                calib_results['translation'].append(i)
+        for _, trans in enumerate(translation):
+            calib_results['translation'].append(trans)
 
         # Use the standard JSON dump
         import json
@@ -660,7 +666,6 @@ class cameraCalibration:
             json.dump(calib_results, fp, sort_keys=True, indent=4, separators=(',', ': '))
 
 
-
 if __name__ == '__main__':
-    new_instance = cameraCalibration()
+    new_instance = CameraCalibration()
     new_instance.calibrate()
