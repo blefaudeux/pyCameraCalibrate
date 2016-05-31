@@ -45,7 +45,7 @@ class BatchCalibration:
             # Enter the number of squares over each dimensions
             settings.pattern_size = (int(h_dim), int(v_dim))
             print "Chessboard dimensions : {} x {}"\
-                .format(self.pattern_size[0], self.pattern_size[1])
+                .format(settings.pattern_size[0], settings.pattern_size[1])
         
             get_square_size = False
             while not get_square_size:
@@ -77,8 +77,8 @@ class BatchCalibration:
             settings.sq_size_v = 0.02545
             
             print("Used parameters :")
-            print("Pattern size : {}".format(self.pattern_size))
-            print("Physical dimensions : {}m x {}m \n ".format(self.sq_size_h, self.sq_size_v))
+            print("Pattern size : {}".format(settings.pattern_size))
+            print("Physical dimensions : {}m x {}m \n ".format(settings.sq_size_h, settings.sq_size_v))
             
         # Get the root folder, Get all the subfolders, do all the subsequent calibrations and record the results
         path = os.path.join(raw_input("Root path for the calibration folders : "), '')
