@@ -32,19 +32,18 @@ class BatchCalibration:
     def __init__(self):
         self.root_path = ''
         self.folder_list = []
-        self.pattern_size = (0, 0)  # Number of inner squares on each dimension
-        self.sq_size_h = 0.0
-        self.sq_size_v = 0.0
-    
+
     def calibrate(self, usedefaults=True):
-        
+
+        settings = cam_calib.CameraCalibrationSettings()
+
         if not usedefaults:
             # Get the pattern parameters
             h_dim = utils.getAnswer("Number of inner corners on the horizontal dimension ? ", '12345678910')
             v_dim = utils.getAnswer("Number of inner corners on the vertical dimension ? ", '12345678910')
     
             # Enter the number of squares over each dimensions
-            self.pattern_size = (int(h_dim), int(v_dim))
+            settings.pattern_size = (int(h_dim), int(v_dim))
             print "Chessboard dimensions : {} x {}"\
                 .format(self.pattern_size[0], self.pattern_size[1])
         
@@ -53,7 +52,7 @@ class BatchCalibration:
                 sq_size = raw_input("Horizontal Size (m) of the squares ? ")
     
                 try:
-                    self.sq_size_h = float(sq_size)
+                    settings.sq_size_h = float(sq_size)
                     get_square_size = True
     
                 except ValueError:
@@ -64,7 +63,7 @@ class BatchCalibration:
                 sq_size = raw_input("Vertical Size (m) of the squares ? ")
     
                 try:
-                    self.sq_size_v = float(sq_size)
+                    settings.sq_size_v = float(sq_size)
                     get_square_size = True
     
                 except ValueError:
@@ -73,9 +72,9 @@ class BatchCalibration:
         else:
             h_dim = 9
             v_dim = 6
-            self.pattern_size = (int(h_dim), int(v_dim))                
-            self.sq_size_h = 0.02545
-            self.sq_size_v = 0.02545
+            settings.pattern_size = (int(h_dim), int(v_dim))
+            settings.sq_size_h = 0.02545
+            settings.sq_size_v = 0.02545
             
             print("Used parameters :")
             print("Pattern size : {}".format(self.pattern_size))
@@ -88,11 +87,7 @@ class BatchCalibration:
         for dirpath, dirnames, filenames in os.walk(path):
             for directory in dirnames:
                 if not directory[0] == '.':
-                    path = os.path.join(dirpath, directory)
-                    
-                    settings = (False, True, True, True, path, self.pattern_size,
-                                (self.sq_size_h, self.sq_size_v), False)
-                    
+                    settings.file_path = os.path.join(dirpath, directory)
                     new_cam = cam_calib.CameraCalibration(settings)
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
