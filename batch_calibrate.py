@@ -80,8 +80,7 @@ class BatchCalibration:
             print("Pattern size : {}".format(self.pattern_size))
             print("Physical dimensions : {}m x {}m \n ".format(self.sq_size_h, self.sq_size_v))
             
-        # Get the root folder, Get all the subfolders, 
-        # do all the subsequent calibrations and record the results 
+        # Get the root folder, Get all the subfolders, do all the subsequent calibrations and record the results
         path = os.path.join(raw_input("Root path for the calibration folders : "), '')
        
         for dirpath, dirnames, filenames in os.walk(path):
@@ -92,7 +91,7 @@ class BatchCalibration:
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
                     
-                    if os.path.exists(path + "/calib_results.json"):
+                    if os.path.exists(os.path.join(path,  "calib_results.json")):
                         print "Folder {} already contains calibration results".format(directory)
                     else:
                         new_cam.calibrate()
