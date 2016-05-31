@@ -86,10 +86,9 @@ class BatchCalibration:
         path = os.path.join(raw_input("Root path for the calibration folders : "), '')
        
         for dirpath, dirnames, filenames in os.walk(path):
-
             for directory in dirnames:
                 if not directory[0] == '.':
-                    path = dirpath + directory
+                    path = os.path.join(dirpath, directory)
                     
                     settings = (False, True, True, True, path, self.pattern_size,
                                 (self.sq_size_h, self.sq_size_v), False)
@@ -98,7 +97,7 @@ class BatchCalibration:
                     
                     print "\nCalibrating using files in folder : {}".format(directory)
                     
-                    if os.path.exists(path + "/calib_results.txt"):
+                    if os.path.exists(path + "/calib_results.json"):
                         print "Folder {} already contains calibration results".format(directory)
                     else:
                         new_cam.calibrate()
