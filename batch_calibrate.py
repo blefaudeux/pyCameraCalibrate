@@ -23,16 +23,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import argparse
 import camera_calibration as cam_calib
 import utils
 import os
 
 
-def calibrate(usedefaults=True):
+def calibrate(settings=None):
 
-    settings = cam_calib.CameraCalibrationSettings()
+    if not settings:
+        settings = cam_calib.CameraCalibrationSettings()
 
-    if not usedefaults:
         # Get the pattern parameters
         h_dim = utils.getAnswer("Number of inner corners on the horizontal dimension ? ", '12345678910')
         v_dim = utils.getAnswer("Number of inner corners on the vertical dimension ? ", '12345678910')
@@ -65,15 +66,9 @@ def calibrate(usedefaults=True):
                 print "Cannot determine dimension"
 
     else:
-        h_dim = 9
-        v_dim = 6
-        settings.pattern_size = (int(h_dim), int(v_dim))
-        settings.sq_size_h = 0.02545
-        settings.sq_size_v = 0.02545
-
-        print("Used parameters :")
+        print("---\nUsed parameters")
         print("Pattern size : {}".format(settings.pattern_size))
-        print("Physical dimensions : {}m x {}m \n ".format(settings.sq_size_h, settings.sq_size_v))
+        print("Physical dimensions : {}m x {}m \n---\n ".format(settings.sq_size_h, settings.sq_size_v))
 
     # Get the root folder, Get all the subfolders, do all the subsequent calibrations and record the results
     path = os.path.join(raw_input("Root path for the calibration folders : "), '')
@@ -95,4 +90,66 @@ def calibrate(usedefaults=True):
 
 
 if __name__ == '__main__':
-    calibrate(False)
+    parser = argparse.ArgumentParser(description='Calibrate camera(s)')
+    parser.add_argument(
+        '-st', '--stereo', dest='stereo', action='store',
+        help='Calibrate stereocameras',
+        default=False
+    )
+
+    parser.add_argument(
+        '-i', '--interactive', dest='interactive', action='store',
+        help='Validate pattern detection interactively',
+        default=False
+    )
+
+    parser.add_argument(
+        '-s', '--save_results', dest='save', action='store',
+        help='Save calibration results',
+        default=True
+    )
+
+    parser.add_argument(
+        '-m', '--max_patterns', dest='max_patterns', action='store',
+        help='Max number of patterns to be used',
+        default=20
+    )
+
+    parser.add_argument(
+        '-sh', '--size_h', dest='size_horizontal', action='store',
+        help='Horizontal size of the pattern (meters)',
+        default=0.003
+    )
+
+    parser.add_argument(
+        '-sv', '--size_v', dest='size_vertical', action='store',
+        help='Vertical size of the pattern (meters)',
+        default=0.003
+    )
+
+    parser.add_argument(
+        '-nh', '--number_h', dest='number_horizontal', action='store',
+        help='Horizontal number of inner corners',
+        default=8
+    )
+
+    parser.add_argument(
+        '-nv', '--number_v', dest='number_vertical', action='store',
+        help='Vertical number of inner corners',
+        default=6
+    )
+
+    parser.add_argument(
+        '-c', '--use_live_camera', dest='use_camera', action='store_true',
+        help='Use a live camera stream'
+    )
+
+    args = parser.parse_args()
+    _settings = cam_calib.CameraCalibrationSettings()
+    _settings.auto_save = args.save
+    _settings.auto_validation = not args.interactive
+    _settings.pattern_size = (args.number_horizontal,args.number_vertical)
+    _settings.sq_size_h = args.size_horizontal
+    _settings.sq_size_v = args.size_vertical
+
+    calibrate(_settings)

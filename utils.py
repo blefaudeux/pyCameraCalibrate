@@ -30,7 +30,7 @@ import re
 
 def getAnswer(question, possibilities):
     answer = 'null'
-    while possibilities.find(answer) == -1:
+    while not answer or possibilities.find(answer) == -1:
         answer = raw_input(question)
 
     return answer
