@@ -32,6 +32,7 @@ import sys
 import utils
 import time
 
+
 class CameraCalibrationSettings:
     def __init__(self):
         self.file_path = ''
