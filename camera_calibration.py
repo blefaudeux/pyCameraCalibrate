@@ -369,7 +369,7 @@ class CameraCalibration:
                     n_frames -= 1
                     b_skip_next = False
 
-            if (self.params.max_frames_i != -1) and (n_frames >= self.max_frames_i):
+            if (self.params.max_frames_i != -1) and (n_frames >= self.params.max_frames_i):
                 print "Enough grabbed frames"
                 break
 
@@ -402,8 +402,8 @@ class CameraCalibration:
         self._record_patterns()
 
         # Compute the intrisic parameters first :
-        rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
-        tvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.params.max_frames_i)]
+        tvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.params.max_frames_i)]
 
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
@@ -492,8 +492,8 @@ class CameraCalibration:
         self._record_patterns()
 
         # Compute intrinsic parameters
-        rvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]    # Rotation and translation matrix
-        tvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]    # Rotation and translation matrix
+        tvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
 
         _obj_points = np.array(self.obj_points, dtype=np.float32)
         _img_points = np.array(self.img_points, dtype=np.float32)
