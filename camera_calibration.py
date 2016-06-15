@@ -51,11 +51,6 @@ class CameraCalibrationSettings:
 
 
 class CameraCalibration:
-    # "Parameters" field can be used to change some settings
-    # namely the automatic pattern validation and the visualisation
-    # it should be a tuple of the form :
-    # [show-pictures, auto_validation, auto_max_pict_number, auto_save, 'file_path', 
-    #   pattern_size(x,y), patch_dimensions(x,y), mono]
     def __init__(self, parameters=CameraCalibrationSettings()):
         self.pict_names = []
         self.obj_points = []
@@ -81,14 +76,12 @@ class CameraCalibration:
             self.params = parameters
 
     def calibrate(self):
-        # Start the appropriate calibration processes
         if self.params.stereo:
             self._calibrate_stereo()
         else:
             self._calibrate_mono()
 
     def _read_files(self, folder_path):
-        # Read in folders, subfolders,...
         n_files = 0
 
         # Scan folder and load pictures
@@ -277,16 +270,12 @@ class CameraCalibration:
                 print "Could not find pattern on picture {}".format(n_count)
 
             if found and not b_skip_next:
-                # Refine position
+                # Refine position & draw pattern
                 term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
                 cv2.cornerSubPix(new_pict, corners, (11, 11), (-1, -1), term)
-
-                # Draw detected pattern
                 cv2.drawChessboardCorners(new_frame, self.params.pattern_size, corners, found)
 
-                # Resize
                 new_size = new_frame.shape
-
                 if new_frame.shape[1] > self.frame_size_max[0]:
                     new_size = (int(new_frame.shape[0]/float(new_frame.shape[1]) * self.frame_size_max[0]),
                                 self.frame_size_max[0])
@@ -342,7 +331,7 @@ class CameraCalibration:
                         n_frames -= 1
 
                 if n_frames == 1:
-                    print "One pattern found"
+                    print "1 pattern found"
                 else:
                     print "{} patterns found".format(n_frames)
 
@@ -551,19 +540,10 @@ class CameraCalibration:
 
     def _undistort_frame(self, frame):
         if self.params.stereo:
-            print "Undistort : cannot handle stereo case"
+            print "[Undistort] Cannot handle stereo for now"
             return None
 
         return cv2.undistort(frame, self.intrinsics[0], self.distorsion[0])
-
-    @staticmethod
-    def _json_load(path):
-        import json
-        with open(path, 'r') as fp:
-            calib_params = json.load(fp)
-            # TODO: Parse the dictionary
-
-        return calib_params
 
     def _json_save(self, rotation, translation, rms, path):
         # Fill in the dict object first
