@@ -40,8 +40,8 @@ def calibrate(settings=None):
 
         # Enter the number of squares over each dimensions
         settings.pattern_size = (int(h_dim), int(v_dim))
-        print "Chessboard dimensions : {} x {}"\
-            .format(settings.pattern_size[0], settings.pattern_size[1])
+        print("Chessboard dimensions : {} x {}"\
+            .format(settings.pattern_size[0], settings.pattern_size[1]))
 
         get_square_size = False
         while not get_square_size:
@@ -52,7 +52,7 @@ def calibrate(settings=None):
                 get_square_size = True
 
             except ValueError:
-                print "Cannot determine dimension"
+                print("Cannot determine dimension")
 
         get_square_size = False
         while not get_square_size:
@@ -63,7 +63,7 @@ def calibrate(settings=None):
                 get_square_size = True
 
             except ValueError:
-                print "Cannot determine dimension"
+                print("Cannot determine dimension")
 
     else:
         print("---\nUsed parameters")
@@ -79,10 +79,10 @@ def calibrate(settings=None):
                 settings.file_path = os.path.join(dirpath, directory)
                 new_cam = cam_calib.CameraCalibration(settings)
 
-                print "\nCalibrating using files in folder : {}".format(directory)
+                print("Calibrating using files in folder : {}".format(directory))
 
-                if os.path.exists(os.path.join(path,  "calib_results.json")):
-                    print "Folder {} already contains calibration results".format(directory)
+                if os.path.exists(os.path.join(path, "calib_results.json")):
+                    print("Folder {} already contains calibration results".format(directory))
                 else:
                     new_cam.calibrate()
 
@@ -91,6 +91,7 @@ def calibrate(settings=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calibrate camera(s)')
+
     parser.add_argument(
         '-st', '--stereo', dest='stereo', action='store',
         help='Calibrate stereocameras',
@@ -145,11 +146,12 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    _settings = cam_calib.CameraCalibrationSettings()
-    _settings.auto_save = args.save
-    _settings.auto_validation = not args.interactive
-    _settings.pattern_size = (args.number_horizontal,args.number_vertical)
-    _settings.sq_size_h = args.size_horizontal
-    _settings.sq_size_v = args.size_vertical
+    settings = cam_calib.CameraCalibrationSettings()
+    settings.auto_save = args.save
+    settings.auto_validation = not args.interactive
+    settings.pattern_size = (int(args.number_horizontal), int(args.number_vertical))
+    settings.sq_size_h = args.size_horizontal
+    settings.sq_size_v = args.size_vertical
+    settings
 
-    calibrate(_settings)
+    calibrate(settings)
