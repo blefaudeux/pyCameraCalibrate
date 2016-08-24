@@ -71,9 +71,10 @@ def calibrate(settings=None):
         print("Physical dimensions : {}m x {}m \n---\n ".format(settings.sq_size_h, settings.sq_size_v))
 
     # Get the root folder, Get all the subfolders, do all the subsequent calibrations and record the results
-    path = os.path.join(raw_input("Root path for the calibration folders : "), '')
+    if len(settings.file_path) == 0:
+        settings.file_path = os.path.join(raw_input("Root path for the calibration folders : "), '')
 
-    for dirpath, dirnames, filenames in os.walk(path):
+    for dirpath, dirnames, filenames in os.walk(settings.file_path):
         for directory in dirnames:
             if not directory[0] == '.':
                 settings.file_path = os.path.join(dirpath, directory)
@@ -81,7 +82,7 @@ def calibrate(settings=None):
 
                 print("Calibrating using files in folder : {}".format(directory))
 
-                if os.path.exists(os.path.join(path, "calib_results.json")):
+                if os.path.exists(os.path.join(settings.file_path, "calib_results.json")):
                     print("Folder {} already contains calibration results".format(directory))
                 else:
                     new_cam.calibrate()
@@ -102,6 +103,12 @@ if __name__ == '__main__':
         '-i', '--interactive', dest='interactive', action='store',
         help='Validate pattern detection interactively',
         default=False
+    )
+
+    parser.add_argument(
+        '-d', '--data_path', dest='data_path', action='store',
+        help='Root path for the data',
+        default=""
     )
 
     parser.add_argument(
@@ -152,6 +159,6 @@ if __name__ == '__main__':
     settings.pattern_size = (int(args.number_horizontal), int(args.number_vertical))
     settings.sq_size_h = args.size_horizontal
     settings.sq_size_v = args.size_vertical
-    settings
+    settings.file_path = args.data_path
 
     calibrate(settings)

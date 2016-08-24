@@ -504,7 +504,7 @@ class CameraCalibration:
         ret = cv2.calibrateCamera(_obj_points, _img_points, self.frame_size, self.intrinsics[0], self.distorsion[0],
                                   rvecs, tvecs)
 
-        [rms, self.intrinsics[0], self.distorsion[0], _, _] = ret
+        [rms, self.intrinsics[0], self.distorsion[0], rvecs, tvecs] = ret
 
         np.set_printoptions(precision=2)
         np.set_printoptions(suppress=True)
@@ -600,16 +600,16 @@ class CameraCalibration:
 
             else:
                 for _, item in enumerate(self.distorsion[0]):
-                    calib_results['distorsion'].append(str(item))
+                    calib_results['distorsion'].append(list(item))
 
         calib_results['picture_size'] = [self.frame_size[0], self.frame_size[1]]
 
         # Motion matrices and we're done
         for _, rot in enumerate(rotation):
-            calib_results['rotation'].append(list(rot))
+            calib_results['rotation'].append(rot.tolist())
 
         for _, trans in enumerate(translation):
-            calib_results['translation'].append(list(trans))
+            calib_results['translation'].append(trans.tolist())
 
         # Use the standard JSON dump
         import json
