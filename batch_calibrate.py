@@ -77,12 +77,12 @@ def calibrate(settings=None):
     for dirpath, dirnames, filenames in os.walk(settings.file_path):
         for directory in dirnames:
             if not directory[0] == '.':
-                path = os.path.join(dirpath, directory)
+                settings.file_path = os.path.join(dirpath, directory)
                 new_cam = cam_calib.CameraCalibration(settings)
 
                 print("Calibrating using files in folder : {}".format(directory))
 
-                if os.path.exists(os.path.join(path, "calib_results.json")):
+                if os.path.exists(os.path.join(settings.file_path, "calib_results.json")):
                     print("Folder {} already contains calibration results".format(directory))
                 else:
                     new_cam.calibrate()
