@@ -24,13 +24,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
-import os       # File and folders navigation
+import os  # File and folders navigation
+import sys
+import time
+from multiprocessing import Pool
 
 import cv2
 import numpy as np
-import sys
+
 import utils
-import time
+
+
+def find_pattern(raw_pict, pattern_size):
+    gray = cv2.cvtColor(raw_pict, cv2.COLOR_BGR2GRAY)
+    pict = np.array(gray)
+    found, corners = cv2.findChessboardCorners(pict, pattern_size)
+
+    if found:
+        term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
+        cv2.cornerSubPix(pict, corners, (11, 11), (-1, -1), term)
+        cv2.drawChessboardCorners(raw_pict, pattern_size, corners, found)
+
+    return [found, corners, pict, raw_pict]  # Let's hope that we take refs of those, no copies..
+
+
+def show_pattern(window, max_size, pict):
+    new_size = pict.shape
+    if pict.shape[1] > max_size:
+        new_size = (int(pict.shape[0] / float(pict.shape[1]) * max_size),
+                    max_size[0])
+
+    resized_pict = cv2.resize(pict, (new_size[1], new_size[0]))
+    cv2.imshow(window, resized_pict)  # Show and wait for key
+    key = cv2.waitKey()
+    return key
 
 
 class CameraCalibrationSettings:
@@ -38,7 +65,7 @@ class CameraCalibrationSettings:
         self.file_path = ''
 
         self.show_pictures = False
-        self.auto_validation = True
+        self.auto_validation = False
         self.auto_save = True
         self.stereo = False
         self.use_camera = False
@@ -63,7 +90,6 @@ class CameraCalibration:
         self.img_points_r = []
 
         self.pictures = []
-        self.max_frames_i = 0
         self.n_pattern_found = 0
 
         self.intrinsics = []
@@ -242,7 +268,7 @@ class CameraCalibration:
         cv2.destroyAllWindows()
 
     def _record_pattern_files(self):
-        # Get patterns on every picture in "pictures[]"
+        # Get patterns on every picture
         pattern_points = np.zeros((np.prod(self.params.pattern_size), 3), np.float32)
         pattern_points[:, :2] = np.indices(self.params.pattern_size).T.reshape(-1, 2)
         pattern_points[:, 0] = pattern_points[:, 0] * self.params.sq_size_h
@@ -253,66 +279,55 @@ class CameraCalibration:
         b_left = False
         b_skip_next = False
 
+        pool = Pool()
+        results = []
+
+        print "Starting pattern research"
+        for pic in self.pictures:
+            results.append(pool.apply_async(find_pattern, args=(pic, self.params.pattern_size)))
+
+        pool.close()
+        pool.join()
+
+        # Validate
         if not self.params.auto_validation:
             cv2.namedWindow("patternDetection", cv2.CV_WINDOW_AUTOSIZE)
             print "Recording patterns from files, press r to reject, other to accept"
         else:
-            print "Looking for patterns.."
+            print "Automatic pattern validation"
 
-        for new_frame in self.pictures:
+        for res in results:
+            found, corners, pict, raw_pict = res.get()
+
             n_count += 1
-
-            gray = cv2.cvtColor(new_frame, cv2.COLOR_BGR2GRAY)
-            new_pict = np.array(gray)
-            found, corners = cv2.findChessboardCorners(new_pict, self.params.pattern_size)
 
             if not found:
                 print "Could not find pattern on picture {}".format(n_count)
 
             if found and not b_skip_next:
-                # Refine position & draw pattern
-                term = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.1)
-                cv2.cornerSubPix(new_pict, corners, (11, 11), (-1, -1), term)
-                cv2.drawChessboardCorners(new_frame, self.params.pattern_size, corners, found)
-
-                new_size = new_frame.shape
-                if new_frame.shape[1] > self.frame_size_max[0]:
-                    new_size = (int(new_frame.shape[0]/float(new_frame.shape[1]) * self.frame_size_max[0]),
-                                self.frame_size_max[0])
-
-                resized_pict = cv2.resize(new_frame, (new_size[1], new_size[0]))
-
                 if not self.params.auto_validation:
-                    cv2.imshow("patternDetection", resized_pict)    # Show and wait for key
-                    key_choice = cv2.waitKey()
+                    key_choice = show_pattern("patternDetection", self.frame_size_max, raw_pict)
                 else:
                     key_choice = -1
 
-                if key_choice == 114:
-                    b_reject = True
-                    print "Rejected"
-                else:
-                    b_reject = False
-
-                if not b_reject:
-                    # Store values
+                if key_choice != 114:
                     if not self.params.stereo:
                         self.img_points.append(corners.reshape(-1, 2))
                         self.obj_points.append(pattern_points)
 
                     else:
+                        b_skip_next = False  # Should be useless
+
                         # Right picture
                         if (n_count % 2) == 0:
                             self.img_points_r.append(corners.reshape(-1, 2))
                             self.obj_points_r.append(pattern_points)
-                            b_skip_next = False     # Should be useless
                             b_left = False
 
                         # Left picture
                         else:
                             self.img_points_l.append(corners.reshape(-1, 2))
                             self.obj_points_l.append(pattern_points)
-                            b_skip_next = False    # Don't skip next picture
                             b_left = True
 
                     n_frames += 1
@@ -335,7 +350,7 @@ class CameraCalibration:
                 else:
                     print "{} patterns found".format(n_frames)
 
-                self.frame_size = (len(new_frame[0]), len(new_frame))
+                self.frame_size = (len(raw_pict[0]), len(raw_pict))
 
             elif self.params.stereo:
                 if (n_count % 2) == 1:
@@ -354,7 +369,7 @@ class CameraCalibration:
                     n_frames -= 1
                     b_skip_next = False
 
-            if (self.max_frames_i != -1) and (n_frames >= self.max_frames_i):
+            if (self.params.max_frames_i != -1) and (n_frames >= self.params.max_frames_i):
                 print "Enough grabbed frames"
                 break
 
@@ -387,8 +402,8 @@ class CameraCalibration:
         self._record_patterns()
 
         # Compute the intrisic parameters first :
-        rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
-        tvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.params.max_frames_i)]
+        tvecs = [np.zeros(3, dtype=np.float32) for _ in xrange(self.params.max_frames_i)]
 
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
         self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
@@ -477,8 +492,8 @@ class CameraCalibration:
         self._record_patterns()
 
         # Compute intrinsic parameters
-        rvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]    # Rotation and translation matrix
-        tvecs = [np.zeros(3) for _ in xrange(self.max_frames_i)]
+        rvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]    # Rotation and translation matrix
+        tvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
 
         _obj_points = np.array(self.obj_points, dtype=np.float32)
         _img_points = np.array(self.img_points, dtype=np.float32)
@@ -515,8 +530,6 @@ class CameraCalibration:
 
                     except ValueError:
                         print "Wrong path, please correct"
-
-                    time.sleep(2)
 
         else:
             calib_file_path = utils.handlePath(self.params.file_path, "calib_results")

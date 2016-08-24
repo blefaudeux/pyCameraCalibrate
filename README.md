@@ -1,7 +1,7 @@
 pyCameraCalibrate
 =================
 - Calibrate a camera using python and opencv. 
-- Calibrate a Stereo-Camera setup.
+- Calibrate a stereo camera setup.
 - Calibrate a live camera, or using prior captures
 - Calibrate batchs of cameras by pointing to the root folder structure containing pattern pictures, and generate a report.
 
