@@ -76,7 +76,7 @@ def calibrate(settings=None):
 
     for dirpath, dirnames, filenames in os.walk(settings.file_path):
         for directory in dirnames:
-            if not directory[0] == '.':
+            if not directory[0] == '.' and directory != 'undistorted' :
                 settings.file_path = os.path.join(dirpath, directory)
                 new_cam = cam_calib.CameraCalibration(settings)
 
