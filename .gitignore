@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .vscode/
 .idea/
+.directory
 
 # C extensions
 *.so

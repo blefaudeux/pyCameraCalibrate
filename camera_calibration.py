@@ -75,6 +75,7 @@ class CameraCalibrationSettings:
         self.sq_size_v = 0.0
 
         self.max_frames_i = -1
+        self.focal_guess = -1.
 
 
 class CameraCalibration:
@@ -100,6 +101,9 @@ class CameraCalibration:
 
         if isinstance(parameters, CameraCalibrationSettings):
             self.params = parameters
+
+        np.set_printoptions(precision=2)
+        np.set_printoptions(suppress=True)
 
     def calibrate(self):
         if self.params.stereo:
@@ -493,36 +497,52 @@ class CameraCalibration:
         self._record_patterns()
 
         # Compute intrinsic parameters
-        rvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]    # Rotation and translation matrix
+        rvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
         tvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
 
-        _obj_points = np.array(self.obj_points, dtype=np.float32)
-        _img_points = np.array(self.img_points, dtype=np.float32)
-        self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
+        self.intrinsics.append(np.zeros((3, 3), dtype=np.float32))
         self.distorsion.append(np.zeros(8, dtype=np.float32))
 
-        ret = cv2.calibrateCamera(_obj_points, _img_points, self.frame_size, self.intrinsics[0], self.distorsion[0],
-                                  rvecs, tvecs)
+        # Optimisation flags
+        flags = 0
+        if self.params.focal_guess > 0.:
+            self.intrinsics[0][0, 0] = self.params.focal_guess
+            self.intrinsics[0][1, 1] = self.params.focal_guess
+            self.intrinsics[0][0, 2] = self.frame_size[0]/2
+            self.intrinsics[0][1, 2] = self.frame_size[1]/2
+            self.intrinsics[0][2, 2] = 1.
+            flags |= cv2.CALIB_USE_INTRINSIC_GUESS
+            print("Using an initial intrisic matrix guess : \n {}".format(
+                self.intrinsics[0]))
+
+        # flags |= cv2.CALIB_FIX_INTRINSIC
+        # flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
+        # flags |= cv2.CALIB_FIX_FOCAL_LENGTH   # Fix focal length
+        # flags |= cv2.CALIB_FIX_ASPECT_RATIO   # fix aspect ratio
+        # flags |= cv2.CALIB_ZERO_TANGENT_DIST  # Set tangential distortion to zero
+        # flags |= cv2.CALIB_RATIONAL_MODEL     # Use 8 param rational distortion model instead of 5 param plumb bob model
+
+        ret = cv2.calibrateCamera(np.array(self.obj_points).astype(np.float32),
+                                  np.array(self.img_points).astype(np.float32),
+                                  self.frame_size, self.intrinsics[0],
+                                  self.distorsion[0],
+                                  rvecs, tvecs, flags)
 
         [rms, self.intrinsics[0], self.distorsion[0], rvecs, tvecs] = ret
 
-        np.set_printoptions(precision=2)
-        np.set_printoptions(suppress=True)
-
         print("Calibration done")
-        print("Residual RMS (pxl units) :\n{}".format(rms))
-        print("\nRotations :\n {} \nTranslations :\n {}".format(rvecs, tvecs))
-        print("\nCalibration parameters : Intrinsics \n {}".format(self.intrinsics[0]))
-        print("Distorsion \n {}".format(self.distorsion[0]))
-        print("\nNumber of pictures used : {}".format(self.n_pattern_found))
+        print("\nResidual RMS (pixels): {}".format(rms))
+        print("\nCalibration parameters: Intrinsics \n {}".format(self.intrinsics[0]))
+        print("\nDistorsion: \n {}".format(self.distorsion[0]))
+        print("\nNumber of pictures used: {}".format(self.n_pattern_found))
 
         # Save calibration parameters
         if not self.params.auto_save:
             b_write_success = False
 
-            if utils.getAnswer("Would you like to save the results ? (y/n) ", 'yn') == "y":
+            if utils.getAnswer("Save the results ? (y/n) ", 'yn') == "y":
                 while not b_write_success:
-                    filepath = raw_input("Where do you want to save the file ? (enter file path) ")
+                    filepath = raw_input("Where do you want to save the file ?")
                     filepath = utils.handlePath(filepath, "calib_results")
 
                     try:
@@ -548,7 +568,7 @@ class CameraCalibration:
                 undistorted = self._undistort_frame(pict)
                 pict_name = os.path.basename(name)
                 cv2.imwrite(os.path.join(dist_folder, pict_name[:-3] + 'undistorted.jpg'), undistorted)
-                print("Image {} undistorted".format(pict_name))
+                print("Image {} rectified".format(pict_name))
 
         return
 
