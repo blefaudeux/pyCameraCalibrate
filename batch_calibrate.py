@@ -40,8 +40,8 @@ def calibrate(settings=None):
 
         # Enter the number of squares over each dimensions
         settings.pattern_size = (int(h_dim), int(v_dim))
-        print("Chessboard dimensions : {} x {}"\
-            .format(settings.pattern_size[0], settings.pattern_size[1]))
+        print("Chessboard dimensions : {} x {}"
+              .format(settings.pattern_size[0], settings.pattern_size[1]))
 
         get_square_size = False
         while not get_square_size:
@@ -148,6 +148,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '-f', '--focal-guess', dest='focal', action='store',
+        help='Initial guess for the focal length',
+        default=-1
+    )
+
+    parser.add_argument(
         '-c', '--use_live_camera', dest='use_camera', action='store_true',
         help='Use a live camera stream'
     )
@@ -160,5 +166,6 @@ if __name__ == '__main__':
     settings.sq_size_h = args.size_horizontal
     settings.sq_size_v = args.size_vertical
     settings.file_path = args.data_path
+    settings.focal_guess = args.focal
 
     calibrate(settings)

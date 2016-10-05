@@ -75,6 +75,7 @@ class CameraCalibrationSettings:
         self.sq_size_v = 0.0
 
         self.max_frames_i = -1
+        self.focal_guess = -1.
 
 
 class CameraCalibration:
@@ -496,13 +497,22 @@ class CameraCalibration:
         rvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
         tvecs = [np.zeros(3) for _ in xrange(self.params.max_frames_i)]
 
-        self.intrinsics.append(np.zeros((4, 4), dtype=np.float32))
+        self.intrinsics.append(np.zeros((3, 3), dtype=np.float32))
         self.distorsion.append(np.zeros(8, dtype=np.float32))
 
         # Optimisation flags
         flags = 0
+        if self.params.focal_guess > 0.:
+            self.intrinsics[0][0, 0] = self.params.focal_guess
+            self.intrinsics[0][1, 1] = self.params.focal_guess
+            self.intrinsics[0][0, 2] = self.frame_size[0]/2
+            self.intrinsics[0][1, 2] = self.frame_size[1]/2
+            self.intrinsics[0][2, 2] = 1.
+            flags |= cv2.CALIB_USE_INTRINSIC_GUESS
+            print("Using an initial intrisic matrix guess : \n {}".format(
+                self.intrinsics[0]))
+
         # flags |= cv2.CALIB_FIX_INTRINSIC
-        # flags |= cv2.CALIB_USE_INTRINSIC_GUESS  # Refine intrinsic parameters
         # flags |= cv2.CALIB_FIX_PRINCIPAL_POINT
         # flags |= cv2.CALIB_FIX_FOCAL_LENGTH   # Fix focal length
         # flags |= cv2.CALIB_FIX_ASPECT_RATIO   # fix aspect ratio
@@ -521,10 +531,10 @@ class CameraCalibration:
         np.set_printoptions(suppress=True)
 
         print("Calibration done")
-        print("Residual RMS (pixels): {}".format(rms))
-        print("Calibration parameters: Intrinsics \n {}".format(self.intrinsics[0]))
-        print("Distorsion: \n {}".format(self.distorsion[0]))
-        print("Number of pictures used: {}".format(self.n_pattern_found))
+        print("\nResidual RMS (pixels): {}".format(rms))
+        print("\nCalibration parameters: Intrinsics \n {}".format(self.intrinsics[0]))
+        print("\nDistorsion: \n {}".format(self.distorsion[0]))
+        print("\nNumber of pictures used: {}".format(self.n_pattern_found))
 
         # Save calibration parameters
         if not self.params.auto_save:
