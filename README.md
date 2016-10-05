@@ -26,7 +26,8 @@ Nothing fancy, just a useful tool in some circumstances..
 - `-f, --focal_guess`: Input an initial value for the focal length
 
 
-## *python camera_calibration.py* for a one-time calibration
+## One time calibration 
+`python camera_calibration.py`
 
 # Installation requisites :
 * Python 2.xx (opencv bindings are a limiting factor here)
