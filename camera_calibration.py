@@ -102,6 +102,9 @@ class CameraCalibration:
         if isinstance(parameters, CameraCalibrationSettings):
             self.params = parameters
 
+        np.set_printoptions(precision=2)
+        np.set_printoptions(suppress=True)
+
     def calibrate(self):
         if self.params.stereo:
             self._calibrate_stereo()
@@ -527,9 +530,6 @@ class CameraCalibration:
 
         [rms, self.intrinsics[0], self.distorsion[0], rvecs, tvecs] = ret
 
-        np.set_printoptions(precision=2)
-        np.set_printoptions(suppress=True)
-
         print("Calibration done")
         print("\nResidual RMS (pixels): {}".format(rms))
         print("\nCalibration parameters: Intrinsics \n {}".format(self.intrinsics[0]))
@@ -568,7 +568,7 @@ class CameraCalibration:
                 undistorted = self._undistort_frame(pict)
                 pict_name = os.path.basename(name)
                 cv2.imwrite(os.path.join(dist_folder, pict_name[:-3] + 'undistorted.jpg'), undistorted)
-                print("Image {} undistorted".format(pict_name))
+                print("Image {} rectified".format(pict_name))
 
         return
 
